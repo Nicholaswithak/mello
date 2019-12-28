@@ -5,6 +5,12 @@ const $createListInput = $('#create-list input');
 const $saveListButton = $('#create-list .save');
 const $createCardInput = $('#create-card textarea');
 const $saveCardButton = $('#create-card .save');
+const $editListInput = $('#edit-list input');
+const $editListSaveButton = $('#edit-list .save');
+const $editListDeleteButton = $('#edit-list .delete');
+const $editCardInput = $('#edit-card textarea');
+const $editCardSaveButton = $('#edit-card .save');
+const $editCardDeleteButton = $('#edit-card .delete');
 
 let board;
 
@@ -44,7 +50,10 @@ function createCards(cards) {
 
   let $cardLis = cards.map(function(card) {
     let $cardLi = $('<li>');
-    let $cardButton = $('<button>').text(card.text);
+    let $cardButton = $('<button>')
+      .text(card.text)
+      .data(card)
+      .on('click', openCardEditModal);
 
     $cardLi.append($cardButton);
 
@@ -60,8 +69,11 @@ function createLists(lists) {
   let $listContainers = lists.map(function(list) {
     let $listContainer = $('<div class="list">').data('id', list.id);
     let $header = $('<header>');
-    let $headerButton = $('<button>').text(list.title);
-    let $cardUl = createCards(list.cards);    
+    let $headerButton = $('<button>')
+      .text(list.title)
+      .data(list)
+      .on('click', openListEditModal);
+    let $cardUl = createCards(list.cards);
     let $addCardButton = $('<button>Add a card...</button>').on(
       'click',
       openCardCreateModal
@@ -157,5 +169,103 @@ function handleCardCreate(event) {
   });
 }
 
-$saveCardButton.on('click', handleCardCreate);
+function openListEditModal(event) {
+  let listData = $(event.target).data();
+
+  $editListInput.val(listData.title);
+  $editListSaveButton.data(listData);
+  $editListDeleteButton.data(listData);
+
+  MicroModal.show('edit-list');
+}
+
+function handleListEdit(event) {
+  event.preventDefault();
+
+  let { title, id } = $(event.target).data();
+  let newTitle = $editListInput.val().trim();
+
+  if (!newTitle || newTitle === title) {
+    MicroModal.close('edit-list');
+    return;
+  }
+
+  $.ajax({
+    url: `/api/lists/${id}`,
+    method: 'PUT',
+    data: {
+      title: newTitle
+    }
+  }).then(function() {
+    init();
+    MicroModal.close('edit-list');
+  });
+}
+
+function handleListDelete(event) {
+  event.preventDefault();
+
+  let { id } = $(event.target).data();
+
+  $.ajax({
+    url: `/api/lists/${id}`,
+    method: 'DELETE'
+  }).then(function() {
+    init();
+    MicroModal.close('edit-list');
+  });
+}
+
+function openCardEditModal(event) {
+  let cardData = $(event.target).data();
+
+  $editCardInput.val(cardData.text);
+  $editCardSaveButton.data(cardData);
+  $editCardDeleteButton.data(cardData);
+
+  MicroModal.show('edit-card');
+}
+
+function handleCardSave(event) {
+  event.preventDefault();
+
+  let { text, id } = $(event.target).data();
+  let newText = $editCardInput.val().trim();
+
+  if (!newText || newText === text) {
+    MicroModal.close('edit-card');
+    return;
+  }
+
+  $.ajax({
+    url: `/api/cards/${id}`,
+    method: 'PUT',
+    data: {
+      text: newText
+    }
+  }).then(function() {
+    init();
+    MicroModal.close('edit-card');
+  });
+}
+
+function handleCardDelete(event) {
+  event.preventDefault();
+
+  let { id } = $(event.target).data();
+
+  $.ajax({
+    url: `/api/cards/${id}`,
+    method: 'DELETE'
+  }).then(function() {
+    init();
+    MicroModal.close('edit-card');
+  });
+}
+
+$saveListButton.on('click', handleListCreate);
 $logoutButton.on('click', handleLogout);
+$editListSaveButton.on('click', handleListEdit);
+$editListDeleteButton.on('click', handleListDelete);
+$editCardSaveButton.on('click', handleCardSave);
+$editCardDeleteButton.on('click', handleCardDelete);
