@@ -157,6 +157,17 @@ function makeSortable() {
         if (position === newPosition && list_id === newListId) {
           return;
         }
+        
+        $.ajax({
+          url: `/api/cards/${id}`,
+          method: 'PUT',
+          data: {
+            list_id: newListId,
+            position: newPosition
+          }
+        }).then(function() {
+          init();
+        });
       }
     });
   });
@@ -322,7 +333,7 @@ function handleCardDelete(event) {
 
 $saveListButton.on('click', handleListCreate);
 $logoutButton.on('click', handleLogout);
-$createCardInput.on('click', handleCardCreate);
+$saveCardButton.on('click', handleCardCreate);
 $editListSaveButton.on('click', handleListEdit);
 $editListDeleteButton.on('click', handleListDelete);
 $editCardSaveButton.on('click', handleCardSave);
